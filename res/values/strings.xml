@@ -1,0 +1,13 @@
+<resources>
+
+    <string name="app_name">WorkdayClock</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_main">Workday Clock</string>
+    <string name="add_string">New</string>
+    <string name="edit_string">Edit</string>
+    <string name="add_title">New Alarm</string>
+    <string name="add_confirm">Confirm</string>
+    <string name="add_cancel">Cancel</string>
+
+</resources>
