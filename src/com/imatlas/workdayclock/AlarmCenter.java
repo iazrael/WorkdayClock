@@ -11,7 +11,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.media.MediaPlayer;
 import android.util.Log;
 
 /**
@@ -85,7 +84,7 @@ public class AlarmCenter {
 				.setSmallIcon(icon)
 				.setTicker("时间到啦")
 				.setWhen(when);
-		Notification notification = builder.build();
+		Notification notification = builder.getNotification();
 
 		notificationManager.notify(0, notification);
 	}

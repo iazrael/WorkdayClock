@@ -24,7 +24,6 @@ public class MusicService extends Service {
 	 */
 	@Override
 	public IBinder onBind(Intent arg0) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -41,6 +40,7 @@ public class MusicService extends Service {
 	}
 
 	public void stopRing() {
+		Log.v("music-service", "stop ring");
 		if(mediaPlayer == null){
 			Log.v("music-service", "mediaplayer is null ");
 		}
