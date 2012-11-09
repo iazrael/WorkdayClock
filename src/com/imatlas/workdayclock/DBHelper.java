@@ -93,7 +93,7 @@ public class DBHelper extends SQLiteOpenHelper {
 		db.update(TABLE_NAME, newValues, "id=" + alarm.id, null);
 	}
 
-	public void deleteAlarm(int id) {
+	public void deleteAlarm(long id) {
 		SQLiteDatabase db = getWritableDatabase();
 		db.delete(TABLE_NAME, "id=" + id, null);
 	}

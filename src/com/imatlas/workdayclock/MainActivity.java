@@ -1,23 +1,25 @@
 package com.imatlas.workdayclock;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+
 import android.os.Bundle;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.Switch;
-import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
@@ -29,54 +31,45 @@ public class MainActivity extends Activity {
 
 	String[] typeArray = new String[] { "workday", "holiday", "custom" };
 
-	void showNewAlarmForm() {
+	void showAlarmForm(final Alarm alarm) {
 		MainActivity context = MainActivity.this;
 
 		AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle(R.string.add_title);
-
 		// 创建弹出的输入框
-		TableLayout layout = new TableLayout(context);
-		// first row
-		TableRow row = new TableRow(context);
-		layout.addView(row);
-		TextView textView = new TextView(context);
-		textView.setText("Type");
-		row.addView(textView);
+		View formView = context.getLayoutInflater().inflate(
+				R.layout.add_alarm_popup, null);
 
-		final Spinner spinner = new Spinner(context);
+		final Spinner spinner = (Spinner) formView
+				.findViewById(R.id.add_alarm_type);
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(context,
 				android.R.layout.simple_spinner_item, typeArray);
 		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 		spinner.setAdapter(adapter);
-		row.addView(spinner);
 
-		// second row
-		row = new TableRow(context);
-		layout.addView(row);
-
-		textView = new TextView(context);
-		textView.setText("Time");
-		row.addView(textView);
-
-		final TimePicker timePicker = new TimePicker(context);
+		final TimePicker timePicker = (TimePicker) formView
+				.findViewById(R.id.add_alarm_timepicter);
 		timePicker.setIs24HourView(true);
-		row.addView(timePicker);
 
-		// third row
-		row = new TableRow(context);
-		layout.addView(row);
-
-		textView = new TextView(context);
-		textView.setText("Enable");
-		row.addView(textView);
-
-		final Switch switch1 = new Switch(context);
-		switch1.setChecked(true);
-		row.addView(switch1);
-
-		builder.setView(layout);
-
+		final Switch switch1 = (Switch) formView
+				.findViewById(R.id.add_alarm_switch);
+		
+		builder.setView(formView);
+		
+		if(alarm == null){//create new one
+			Calendar c = Calendar.getInstance();
+			timePicker.setCurrentHour(c.get(Calendar.HOUR_OF_DAY));
+			switch1.setChecked(true);
+		}else{
+			//edit
+			switch1.setChecked(alarm.enable);
+			spinner.setSelection(alarm.type);
+			String[] strs = alarm.alarmTime.split(":");
+			timePicker.setCurrentHour(Integer.parseInt(strs[0]));
+			timePicker.setCurrentMinute(Integer.parseInt(strs[1]));
+		}
+		
+		
 		builder.setPositiveButton(R.string.add_confirm,
 				new DialogInterface.OnClickListener() {
 
@@ -87,34 +80,58 @@ public class MainActivity extends Activity {
 						int selectedHour = timePicker.getCurrentHour();
 						int selectedMinute = timePicker.getCurrentMinute();
 						String alarmTime = selectedHour + ":" + selectedMinute;
-						Alarm alarm = dbHelper
-								.addAlarm(type, alarmTime, enable);
-						// Assert.assertNotNull(alarm);
-						if (alarm != null) {
-							alarmAdapter.add(alarm);
-							Log.v("main-add-alarm", alarm.toString());
-							AlarmCenter.addAlarm(MainActivity.this, alarm);
+						if(alarm == null){
+							Alarm newAlarm = dbHelper
+									.addAlarm(type, alarmTime, enable);
+							// Assert.assertNotNull(alarm);
+							if (newAlarm != null) {
+								alarmAdapter.add(newAlarm);
+								Log.v("main-add-alarm", newAlarm.toString());
+								AlarmCenter.addAlarm(MainActivity.this, newAlarm);
+							}
+						}else{
+							alarm.enable = enable;
+							alarm.alarmTime = alarmTime;
+							alarm.type = type;
+							Log.v("main-update-alarm", alarm.toString());
+							dbHelper.updateAlarm(alarm);
+							alarmAdapter.notifyDataSetChanged();
+							AlarmCenter.updateAlarm(MainActivity.this, alarm);
 						}
-
 					}
 				});
 		builder.setNegativeButton(R.string.add_cancel, null);
 		builder.show();
 	}
 
-	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
 		dbHelper = new DBHelper(this);
-		
+
 		Button newButton = (Button) findViewById(R.id.newButton);
 		newButton.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				showNewAlarmForm();
+				showAlarmForm(null);
+			}
+		});
+
+		Button editButton = (Button) findViewById(R.id.editButton);
+		editButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Button ediButton = (Button) v;
+				if (alarmAdapter.isEditing) {
+					alarmAdapter.isEditing = false;
+					ediButton.setText(R.string.edit_string);
+				} else {
+					alarmAdapter.isEditing = true;
+					ediButton.setText(R.string.save_string);
+				}
+				alarmAdapter.notifyDataSetChanged();
 			}
 		});
 
@@ -125,6 +142,16 @@ public class MainActivity extends Activity {
 
 		vAlarmList.setAdapter(alarmAdapter);
 
+		vAlarmList.setOnItemClickListener(new ListView.OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> arg0, View arg1, int index,
+					long arg3) {
+				Log.d("main", "click list view item at: " + index);
+				Alarm alarm = alarmAdapter.getItem(index);
+				showAlarmForm(alarm);
+			}
+		});
+
 	}
 
 	@Override
@@ -133,10 +160,20 @@ public class MainActivity extends Activity {
 		return true;
 	}
 
+	@Override
+	protected void onStart() {
+		super.onStart();
+		Log.v("main", "onStart");
+		Context context = MainActivity.this;
+		stopService(new Intent(context, MusicService.class));
+		AlarmCenter.cancelNotification(context);
+	}
+
 	class ViewHolder {
 		public TextView alarmType;
 		public TextView alarmTime;
 		public Switch alarmEnable;
+		public Button delteButton;
 	}
 
 	class AlarmArrayAdapter extends ArrayAdapter<Alarm> {
@@ -144,6 +181,8 @@ public class MainActivity extends Activity {
 		ArrayList<Alarm> alarms;
 
 		private LayoutInflater layoutInflater;
+
+		boolean isEditing = false;
 
 		/**
 		 * @param context
@@ -173,6 +212,8 @@ public class MainActivity extends Activity {
 						.findViewById(R.id.list_alarm_time);
 				holder.alarmEnable = (Switch) convertView
 						.findViewById(R.id.list_alarm_enable);
+				holder.delteButton = (Button) convertView
+						.findViewById(R.id.del_alarm);
 
 				convertView.setTag(holder);
 
@@ -186,20 +227,57 @@ public class MainActivity extends Activity {
 			holder.alarmType.setText(typeArray[alarm.type]);
 			holder.alarmTime.setText(alarm.alarmTime);
 			holder.alarmEnable.setChecked(alarm.enable);
-			holder.alarmEnable.setOnClickListener(new View.OnClickListener() {
+			if (isEditing) {
+				holder.delteButton.setVisibility(View.VISIBLE);
+				holder.alarmEnable.setVisibility(View.GONE);
 
-				@Override
-				public void onClick(View v) {
-					if (v instanceof Switch) {
-						Switch swt = (Switch) v;
-						alarm.enable = swt.isChecked();
-						dbHelper.updateAlarm(alarm);
-						Log.v("main-update-state", alarm.toString());
-						// TODO 更新闹铃任务
-					}
+				holder.delteButton
+						.setOnClickListener(new View.OnClickListener() {
+							@Override
+							public void onClick(View v) {
+								// AlertDialog.Builder builder = new
+								// AlertDialog.Builder(MainActivity.this);
+								// builder.setTitle(R.string.warning_title);
+								//
+								// builder.setPositiveButton(R.string.add_confirm,
+								// new DialogInterface.OnClickListener() {
+								// @Override
+								// public void onClick(DialogInterface dialog,
+								// int which) {
+								//
+								// }
+								// });
+								// builder.setNegativeButton(R.string.add_cancel,
+								// null);
+								// builder.show();
+								Log.v("main-delete-alarm", alarm.toString());
+								AlarmCenter.cancelAlarm(MainActivity.this,
+										alarm);
+								dbHelper.deleteAlarm(alarm.id);
+								alarmAdapter.remove(alarm);
+							}
+						});
+			} else {
+				holder.delteButton.setVisibility(View.GONE);
+				holder.alarmEnable.setVisibility(View.VISIBLE);
 
-				}
-			});
+				holder.alarmEnable
+						.setOnClickListener(new View.OnClickListener() {
+							@Override
+							public void onClick(View v) {
+								if (v instanceof Switch) {
+									Switch swt = (Switch) v;
+									alarm.enable = swt.isChecked();
+									dbHelper.updateAlarm(alarm);
+									Log.v("main-update-state", alarm.toString());
+									AlarmCenter.updateAlarm(MainActivity.this,
+											alarm);
+
+								}
+
+							}
+						});
+			}
 
 			return convertView;
 		}

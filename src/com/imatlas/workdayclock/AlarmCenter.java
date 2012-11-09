@@ -6,9 +6,12 @@ package com.imatlas.workdayclock;
 
 import java.util.Calendar;
 import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.util.Log;
 
 /**
@@ -18,6 +21,7 @@ import android.util.Log;
 public class AlarmCenter {
 
 	public static void addAlarm(Context context, Alarm alarm) {
+		// TODO 时间的判断
 		Calendar c = Calendar.getInstance();
 		String[] strs = alarm.alarmTime.split(":");
 		c.set(Calendar.HOUR_OF_DAY, Integer.parseInt(strs[0]));
@@ -35,18 +39,61 @@ public class AlarmCenter {
 		AlarmManager am = (AlarmManager) context
 				.getSystemService(Context.ALARM_SERVICE);
 		Intent intent = new Intent(context, AlarmReceiver.class);
-		PendingIntent pi = PendingIntent.getBroadcast(context, 0/*(int) alarm.id*/,
-				intent, 0);
+		intent.putExtra("alarmId", alarm.id);
+		PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, 0);
 		am.set(AlarmManager.RTC_WAKEUP, timeInMillis, pi);
 
 	}
-	
-	public static void cancelAlarm(Context context, Alarm alarm){
+
+	public static void cancelAlarm(Context context, Alarm alarm) {
 		AlarmManager am = (AlarmManager) context
 				.getSystemService(Context.ALARM_SERVICE);
+		Log.v("alarm-center", "取消闹钟: " + alarm.toString());
 		Intent intent = new Intent(context, AlarmReceiver.class);
-		PendingIntent pi = PendingIntent.getBroadcast(context, 0/*(int) alarm.id*/,
-				intent, 0);
+		intent.putExtra("alarmId", alarm.id);
+		PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, 0);
 		am.cancel(pi);
 	}
+
+	public static void updateAlarm(Context context, Alarm alarm) {
+		Log.v("alarm-center", "更新闹钟: " + alarm.toString());
+		if (alarm.enable) {
+			AlarmCenter.addAlarm(context, alarm);
+		} else {
+			AlarmCenter.cancelAlarm(context, alarm);
+		}
+	}
+
+	
+
+	public static void showNotification(Context context) {
+		//弹提示
+		NotificationManager notificationManager = (NotificationManager) context
+				.getSystemService(Context.NOTIFICATION_SERVICE);
+
+		int icon = android.R.drawable.ic_dialog_alert;
+		long when = System.currentTimeMillis();
+		Intent openintent = new Intent(context, MainActivity.class);
+		// 当点击消息时就会向系统发送openintent意图
+		PendingIntent contentIntent = PendingIntent.getActivity(context, 0,
+				openintent, 0);
+		// Notification notification = new Notification(icon, "时间到啦", when);
+		Notification.Builder builder = new Notification.Builder(context)
+				.setContentIntent(contentIntent)
+				.setContentTitle("WorkdayClock")
+				.setContentText("时间到啦")
+				.setSmallIcon(icon)
+				.setTicker("时间到啦")
+				.setWhen(when);
+		Notification notification = builder.build();
+
+		notificationManager.notify(0, notification);
+	}
+	
+	public static void cancelNotification(Context context) {
+		NotificationManager manager = (NotificationManager) context
+				.getSystemService(Context.NOTIFICATION_SERVICE);// 得到系统服务
+		manager.cancel(0);// 取消通知
+	}
+
 }

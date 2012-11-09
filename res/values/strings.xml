@@ -9,5 +9,11 @@
     <string name="add_title">New Alarm</string>
     <string name="add_confirm">Confirm</string>
     <string name="add_cancel">Cancel</string>
+    <string name="add_form_alarm_type">Type</string>
+    <string name="add_form_alarm_time">Time</string>
+    <string name="add_form_alarm_enable">Enable</string>
+    <string name="save_string">Finish</string>
+    <string name="del_string">Delete</string>
+    <string name="warning_title">Warning</string>
 
 </resources>
