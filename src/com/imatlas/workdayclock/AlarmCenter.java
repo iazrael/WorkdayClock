@@ -63,8 +63,6 @@ public class AlarmCenter {
 		}
 	}
 
-	
-
 	public static void showNotification(Context context) {
 		//弹提示
 		NotificationManager notificationManager = (NotificationManager) context

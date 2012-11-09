@@ -21,6 +21,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	private static final int DATABASE_VERSION = 15;
 	private static final String DB_NAME = "alarms.db";
 	private static final String TABLE_NAME = "alarm";
+	private static final String WORKDAY_TABLE_NAME = "workday";
 
 	/**
 	 * @param context
@@ -47,6 +48,12 @@ public class DBHelper extends SQLiteOpenHelper {
 //				+ "createTime timestamp, " + "modifyTime timestamp, "
 				+ "type int, " + "enable int, " + "alarmTime varchar)";
 		db.execSQL(sql);
+		
+		sql = "CREATE TABLE IF NOT EXISTS " + WORKDAY_TABLE_NAME
+				+ "(id integer primary key, "
+				+ "data varchar, " + "updateTime timestamp)";
+		
+		db.execSQL(sql);
 	}
 
 	/*
@@ -59,6 +66,7 @@ public class DBHelper extends SQLiteOpenHelper {
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int arg1, int arg2) {
 		db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+		db.execSQL("DROP TABLE IF EXISTS " + WORKDAY_TABLE_NAME);
 		onCreate(db);
 		Log.v("dbhelper", "db upgrade");
 	}
@@ -135,5 +143,9 @@ public class DBHelper extends SQLiteOpenHelper {
 		Log.v("dbhelper-listAlarms", "size: "+  list.size());
 		return list;
 	}
-
+	
+	public void insertWorkday(){
+		
+	}
+	
 }
